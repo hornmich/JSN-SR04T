@@ -4,7 +4,6 @@
  * JSN-SR04T ultrasonic module driver.
  *
  * @todo Remove dependency on STM32 CubeMX generated HAL_GPIO functions and types.
- * @todo Improve measuring finished indication interface.
  *
  * @author Michal Horn
  */
@@ -23,6 +22,7 @@ typedef enum {
 	JSN_TRIGGER_UP,         //!< Measuring state - creating the 10us trigger pulse.
 	JSN_WAITING_FOR_ECHO,   //!< Measuring state - waiting for the echo rising edge.
 	JSN_ECHO_UP,            //!< Measuring state - waiting for the echo falling edge.
+	JSN_FINISHED,			//!< Measuring has finished successfully.
 	JSN_FAILURE,            //!< Measuring failed due to a timeout in any of the measuring states.
 } jsn_sr04t_state_t;
 
@@ -75,6 +75,14 @@ jsn_sr04t_ret_val_t JSN_Measure(jsn_sr04t_desc_t* desc);
  * @return The state of the ultrasonic module.
  */
 jsn_sr04t_state_t JSN_GetState(jsn_sr04t_desc_t* desc);
+
+/**
+ * Return true if the measuring has finished successfully or with an error.
+ *
+ * @param desc Ultrasonic module descriptor.
+ * @return 1 if the measuring has finished, 0 if the measuring is still running.
+ */
+uint8_t JSN_Measuring_finished(jsn_sr04t_desc_t* desc);
 
 /**
  * Calculate and return the distance in centimeters.

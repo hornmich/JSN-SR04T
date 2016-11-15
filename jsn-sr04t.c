@@ -22,7 +22,7 @@ void JSN_Init(jsn_sr04t_desc_t* desc, GPIO_TypeDef* t_port, uint16_t t_pin, GPIO
 }
 
 jsn_sr04t_ret_val_t JSN_Measure(jsn_sr04t_desc_t* desc) {
-	if (desc->state != JSN_READY && desc->state != JSN_FAILURE) {
+	if (desc->state != JSN_FINISHED && desc->state != JSN_READY && desc->state != JSN_FAILURE) {
 		return JSN_ERROR;
 	}
 
@@ -35,8 +35,18 @@ jsn_sr04t_state_t JSN_GetState(jsn_sr04t_desc_t* desc) {
 	return desc->state;
 }
 
+uint8_t JSN_Measuring_finished(jsn_sr04t_desc_t* desc) {
+	if (desc->state == JSN_FINISHED || desc->state == JSN_FAILURE) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+
 uint32_t JSN_GetDistance_cm(jsn_sr04t_desc_t* desc) {
-	if (desc->state == JSN_READY) {
+	if (desc->state == JSN_FINISHED) {
 		desc->distance_cm = (desc->counter_10us*10) >> 6;
 	}
 	else {
@@ -89,7 +99,7 @@ void JSN_GPIO_EXTI_callback(jsn_sr04t_desc_t* desc) {
 	case JSN_ECHO_UP:
 		pin_value = HAL_GPIO_ReadPin(desc->echo_port, desc->echo_pin);
 		if (pin_value == GPIO_PIN_RESET) {
-			desc->state = JSN_READY;
+			desc->state = JSN_FINISHED;
 		}
 		else {
 			desc->state = JSN_FAILURE;
