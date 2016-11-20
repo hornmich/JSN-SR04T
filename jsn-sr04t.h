@@ -1,8 +1,8 @@
 /**
  * @file jsn-sr04t.h
  *
- * JSN-SR04T ultrasonic module driver.
- *
+ * @brief JSN-SR04T ultrasonic module driver.
+
  * @author Michal Horn
  */
 
@@ -32,6 +32,9 @@ typedef enum {
 
 /**
  * Module descriptor.
+ *
+ * This data structure is passed to every functions of the driver to reference the module to
+ * be used.
  */
 typedef struct jsn_sr04t_desc_st {
 	jsn_sr04t_state_t state;	//!< The state of the module.
@@ -43,14 +46,38 @@ typedef struct jsn_sr04t_desc_st {
 	unsigned int distance_cm;	//!< The calculated distance in cm. 0 in case of failure.
 } jsn_sr04t_desc_t;
 
+
+/**
+ * Definition of a wrapper function for reading a value of a GPIO pin.
+ *
+ * This function must be declared in the application, to call the proper GPIO Read function.
+ * The wrapper is here to allow easy portability to any application, using any lower layer code.
+ *
+ * @param GPIO_Port A pointer to the GPIO port of any type. Must be explicitly converted to the right data type.
+ * @param GPIO_Pin	A pointer to the GPIO pin of any type. Must be explicitly converted to the right data type.
+ *
+ * @return	The value of the selected pin.
+ */
 unsigned int JSN_GPIO_Get_value_wrapper(void* GPIO_Port, void* GPIO_Pin);
 
+/**
+ * Definition of a wrapper function for writing a value to a GPIO pin.
+ *
+ * This function must be declared in the application, to call the proper GPIO Write function.
+ * The wrapper is here to allow easy portability to any application, using any lower layer code.
+ *
+ * @param GPIO_Port A pointer to the GPIO port of any type. Must be explicitly converted to the right data type.
+ * @param GPIO_Pin	A pointer to the GPIO pin of any type. Must be explicitly converted to the right data type.
+ * @param value	The binary value to be written on the GPIO pin.
+ */
 void JSN_GPIO_Set_value_wrapper(void* GPIO_Port, void* GPIO_Pin, unsigned int value);
 
 /**
  * Initialize the driver for the ultrasonic module.
  *
  * Must be called for every ultrasonic module used in the application.
+ *
+ * This function is non blocking.
  *
  * @param desc The module descriptor pointer to be initialized.
  * @param t_port The GPIO port to be used for trigger pin.
@@ -62,6 +89,10 @@ void JSN_Init(jsn_sr04t_desc_t* desc, void* t_port, void* t_pin, void* e_port, v
 
 /**
  * Initiate measuring.
+ *
+ * Call this function to start the distance measurement.
+ *
+ * This function is non blocking.
  *
  * @param desc Ultrasonic module descriptor.
  * @return JSN_SUCCESS on success or JSN_ERROR if previous measuring not finished.
@@ -77,17 +108,18 @@ jsn_sr04t_ret_val_t JSN_Measure(jsn_sr04t_desc_t* desc);
 jsn_sr04t_state_t JSN_GetState(jsn_sr04t_desc_t* desc);
 
 /**
- * Return true if the measuring has finished successfully or with an error.
+ * Returns 1 if the measuring is done.
  *
  * @param desc Ultrasonic module descriptor.
- * @return 1 if the measuring has finished, 0 if the measuring is still running.
+ * @return 1 if the measuring has finished (successfuly or with error), 0 if the measuring is still running.
  */
 int JSN_Measuring_finished(jsn_sr04t_desc_t* desc);
 
 /**
  * Calculate and return the distance in centimeters.
+ *
  * @param desc Ultrasonic module descriptor.
- * @return The calculated distance in cm or 0 if the module is in JSN_FAILURE state.
+ * @return The calculated distance in cm or 0 if the module is still measuring or if measurement failed.
  */
 unsigned int JSN_GetDistance_cm(jsn_sr04t_desc_t* desc);
 
