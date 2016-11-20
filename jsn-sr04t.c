@@ -11,7 +11,7 @@
 #define JSN_TRIGGER_TIME_10US	1
 #define JSN_ECHO_TIMEOUT_10US	3200
 
-void JSN_Init(jsn_sr04t_desc_t* desc, GPIO_TypeDef* t_port, uint16_t t_pin, GPIO_TypeDef* e_port, uint16_t e_pin) {
+void JSN_Init(jsn_sr04t_desc_t* desc, void* t_port, void* t_pin, void* e_port, void* e_pin) {
 	desc->counter_10us = 0;
 	desc->trigger_port = t_port;
 	desc->trigger_pin = t_pin;
@@ -35,7 +35,7 @@ jsn_sr04t_state_t JSN_GetState(jsn_sr04t_desc_t* desc) {
 	return desc->state;
 }
 
-uint8_t JSN_Measuring_finished(jsn_sr04t_desc_t* desc) {
+int JSN_Measuring_finished(jsn_sr04t_desc_t* desc) {
 	if (desc->state == JSN_FINISHED || desc->state == JSN_FAILURE) {
 		return 1;
 	}
@@ -45,7 +45,7 @@ uint8_t JSN_Measuring_finished(jsn_sr04t_desc_t* desc) {
 }
 
 
-uint32_t JSN_GetDistance_cm(jsn_sr04t_desc_t* desc) {
+unsigned int JSN_GetDistance_cm(jsn_sr04t_desc_t* desc) {
 	if (desc->state == JSN_FINISHED) {
 		desc->distance_cm = (desc->counter_10us*10) >> 6;
 	}
@@ -60,13 +60,13 @@ void JSN_10us_timer_callback(jsn_sr04t_desc_t* desc) {
 	case JSN_WAITING_FOR_TRIGGER:
 		desc->counter_10us = 0;
 		desc->state = JSN_TRIGGER_UP;
-		HAL_GPIO_WritePin(desc->trigger_port, desc->trigger_pin, GPIO_PIN_SET);
+		JSN_GPIO_Set_value_wrapper(desc->trigger_port, desc->trigger_pin, 1);
 		break;
 	case JSN_TRIGGER_UP:
 		desc->counter_10us++;
 		if (desc->counter_10us >= JSN_TRIGGER_TIME_10US) {
 			desc->state = JSN_WAITING_FOR_ECHO;
-			HAL_GPIO_WritePin(desc->trigger_port, desc->trigger_pin, GPIO_PIN_RESET);
+			JSN_GPIO_Set_value_wrapper(desc->trigger_port, desc->trigger_pin, 0);
 			desc->counter_10us = 0;
 		}
 		break;
@@ -83,11 +83,11 @@ void JSN_10us_timer_callback(jsn_sr04t_desc_t* desc) {
 }
 
 void JSN_GPIO_EXTI_callback(jsn_sr04t_desc_t* desc) {
-	GPIO_PinState pin_value;
+	unsigned int pin_value;
 	switch (desc->state) {
 	case JSN_WAITING_FOR_ECHO:
-		pin_value = HAL_GPIO_ReadPin(desc->echo_port, desc->echo_pin);
-		if (pin_value == GPIO_PIN_SET) {
+		pin_value = JSN_GPIO_Get_value_wrapper(desc->echo_port, desc->echo_pin);
+		if (pin_value == 1) {
 			desc->distance_cm = 0;
 			desc->counter_10us = 0;
 			desc->state = JSN_ECHO_UP;
@@ -97,8 +97,8 @@ void JSN_GPIO_EXTI_callback(jsn_sr04t_desc_t* desc) {
 		}
 		break;
 	case JSN_ECHO_UP:
-		pin_value = HAL_GPIO_ReadPin(desc->echo_port, desc->echo_pin);
-		if (pin_value == GPIO_PIN_RESET) {
+		pin_value = JSN_GPIO_Get_value_wrapper(desc->echo_port, desc->echo_pin);
+		if (pin_value == 0) {
 			desc->state = JSN_FINISHED;
 		}
 		else {

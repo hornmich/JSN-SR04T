@@ -3,15 +3,11 @@
  *
  * JSN-SR04T ultrasonic module driver.
  *
- * @todo Remove dependency on STM32 CubeMX generated HAL_GPIO functions and types.
- *
  * @author Michal Horn
  */
 
 #ifndef JSN_SR04T_JSN_SR04T_H_
 #define JSN_SR04T_JSN_SR04T_H_
-
-#include "stm32f1xx.h"
 
 /**
  * States of the driver
@@ -39,13 +35,17 @@ typedef enum {
  */
 typedef struct jsn_sr04t_desc_st {
 	jsn_sr04t_state_t state;	//!< The state of the module.
-	uint32_t counter_10us;		//!< The timer counter for the module, counts in 10s of micro seconds.
-	GPIO_TypeDef* trigger_port;	//!< The GPIO port of trigger pin.
-	GPIO_TypeDef* echo_port;	//!< The GPIO port of echo pin.
-	uint16_t trigger_pin;		//!< The GPIO trigger pin.
-	uint16_t echo_pin;			//!< The GPIO echo pin.
-	uint8_t distance_cm;		//!< The calculated distance in cm. 0 in case of failure.
+	unsigned int counter_10us;	//!< The timer counter for the module, counts in 10s of micro seconds.
+	void* trigger_port;			//!< The GPIO port of trigger pin.
+	void* echo_port;			//!< The GPIO port of echo pin.
+	void* trigger_pin;			//!< The GPIO trigger pin.
+	void* echo_pin;				//!< The GPIO echo pin.
+	unsigned int distance_cm;	//!< The calculated distance in cm. 0 in case of failure.
 } jsn_sr04t_desc_t;
+
+unsigned int JSN_GPIO_Get_value_wrapper(void* GPIO_Port, void* GPIO_Pin);
+
+void JSN_GPIO_Set_value_wrapper(void* GPIO_Port, void* GPIO_Pin, unsigned int value);
 
 /**
  * Initialize the driver for the ultrasonic module.
@@ -58,7 +58,7 @@ typedef struct jsn_sr04t_desc_st {
  * @param e_port The GPIO trigger pin.
  * @param e_pin The GPIO echo pin.
  */
-void JSN_Init(jsn_sr04t_desc_t* desc, GPIO_TypeDef* t_port, uint16_t t_pin, GPIO_TypeDef* e_port, uint16_t e_pin);
+void JSN_Init(jsn_sr04t_desc_t* desc, void* t_port, void* t_pin, void* e_port, void* e_pin);
 
 /**
  * Initiate measuring.
@@ -82,14 +82,14 @@ jsn_sr04t_state_t JSN_GetState(jsn_sr04t_desc_t* desc);
  * @param desc Ultrasonic module descriptor.
  * @return 1 if the measuring has finished, 0 if the measuring is still running.
  */
-uint8_t JSN_Measuring_finished(jsn_sr04t_desc_t* desc);
+int JSN_Measuring_finished(jsn_sr04t_desc_t* desc);
 
 /**
  * Calculate and return the distance in centimeters.
  * @param desc Ultrasonic module descriptor.
  * @return The calculated distance in cm or 0 if the module is in JSN_FAILURE state.
  */
-uint32_t JSN_GetDistance_cm(jsn_sr04t_desc_t* desc);
+unsigned int JSN_GetDistance_cm(jsn_sr04t_desc_t* desc);
 
 /**
  * Callback for 10us timer.
